@@ -5,6 +5,7 @@ returns the total calorie count using the free USDA FoodData Central API.
 
 
 ## Application File Structure
+```
 meal-calorie-backend/
 ├── main.py
 ├── database.py
@@ -21,9 +22,9 @@ meal-calorie-backend/
 ├── .env.example
 ├── requirements.txt
 └── .gitignore  # Includes: .env, __pycache__, venv/, etc.
+```
 
-
-# Local Development Setup
+## Local Development Setup
 - Clone the repository to a desired location in your computer with:
 ```bash
 git clone git@github.com:adybose/meal-calorie-backend.git
@@ -44,19 +45,9 @@ source mealenv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
-Note that the requirements are based on these main packages:
-```
-fastapi
-uvicorn
-sqlalchemy
-psycopg2-binary
-python-dotenv
-requests
-fuzzywuzzy
-python-levenshtein
-passlib[bcrypt]
-python-jose[cryptography]
-```
+> **_NOTE:_**
+The requirements are based on these main packages: fastapi, uvicorn, sqlalchemy, psycopg2-binary, python-dotenv, requests, fuzzywuzzy, python-levenshtein, passlib[bcrypt], python-jose[cryptography]
+
 
 ## Usage
 Run the application with:
