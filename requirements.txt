@@ -23,6 +23,7 @@ pydantic-core==2.27.2
 python-dotenv==1.0.1
 python-jose==3.4.0
 python-Levenshtein==0.25.1
+python-multipart==0.0.20
 rapidfuzz==3.9.7
 requests==2.32.4
 rsa==4.9.1
