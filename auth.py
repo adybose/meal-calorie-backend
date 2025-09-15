@@ -44,21 +44,15 @@ def verify_access_token(credentials: HTTPAuthorizationCredentials = Depends(secu
         raise credential_exception
     return token_data
 
-async def get_current_user(token: str = Depends(verify_access_token), db: Session = Depends(get_db)):
+async def get_current_user(token: TokenData = Depends(verify_access_token), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-        token_data = TokenData(email=email)
-    except JWTError:
-        raise credentials_exception
-    user = get_user_by_email(db, email=token_data.email)
+    email: str = token.email  # Use email from TokenData directly
+    user = get_user_by_email(db, email=email)
     if user is None:
         raise credentials_exception
     return user
+
