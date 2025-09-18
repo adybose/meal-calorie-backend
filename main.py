@@ -1,10 +1,20 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware  # Add this import
 from database import engine, Base
 from routers import auth, calories
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Meal Calorie Count Generator Backend")
+
+# Add this CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Frontend origin
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth.router)
 app.include_router(calories.router)
