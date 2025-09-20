@@ -32,3 +32,18 @@ class CalorieResponse(BaseModel):
     calories_per_serving: float
     total_calories: float
     source: str = "USDA FoodData Central"
+
+class UserResponse(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserResponse
