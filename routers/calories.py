@@ -29,7 +29,11 @@ async def get_calories(request: CalorieRequest, current_user: dict = Depends(get
         response = requests.get(USDA_API_URL, params=params)
         if response.status_code != 200:
             raise HTTPException(status_code=500, detail=f"USDA API error: {response.status_code} - {response.text}")
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Error in get_calories: {str(e)}")
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
         raise HTTPException(status_code=500, detail=f"Error in get_calories: {str(e)}")
 
     data = response.json()
