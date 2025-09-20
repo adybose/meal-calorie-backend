@@ -24,7 +24,8 @@ class TokenData(BaseModel):
 
 class CalorieRequest(BaseModel):
     dish_name: str
-    servings: int
+    mode: str
+    servings: float
 
 class CalorieResponse(BaseModel):
     dish_name: str
