@@ -16,17 +16,21 @@ USDA_API_KEY = os.getenv("USDA_API_KEY")
 
 @router.post("/get-calories")
 async def get_calories(request: CalorieRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    if request.servings <= 0:
-        raise HTTPException(status_code=400, detail="Invalid servings: must be positive")
 
-    params = {
-        "query": request.dish_name,
-        "api_key": USDA_API_KEY,
-        "pageSize": 5
-    }
-    response = requests.get(USDA_API_URL, params=params)
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="USDA API error")
+    try:
+        if request.servings <= 0:
+            raise HTTPException(status_code=400, detail="Invalid servings: must be positive")
+
+        params = {
+            "query": request.dish_name,
+            "api_key": USDA_API_KEY,
+            "pageSize": 5
+        }
+        response = requests.get(USDA_API_URL, params=params)
+        if response.status_code != 200:
+            raise HTTPException(status_code=500, detail=f"USDA API error: {response.status_code} - {response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error in get_calories: {str(e)}")
 
     data = response.json()
     foods = data.get("foods", [])
@@ -45,7 +49,7 @@ async def get_calories(request: CalorieRequest, current_user: dict = Depends(get
         raise HTTPException(status_code=500, detail="USDA details API error")
 
     food_details = details_response.json()
-
+    
     serving_size = food_details.get('servingSize', 100.0)
     serving_unit = food_details.get('servingSizeUnit', 'g')
     household_text = food_details.get('householdServingFullText', 'N/A')
@@ -53,20 +57,33 @@ async def get_calories(request: CalorieRequest, current_user: dict = Depends(get
     # Collect all nutrients per 100g
     per_100g_nutrients = []
     for nutrient in food_details.get('foodNutrients', []):
-        nut_id = nutrient['nutrient']['id']
-        nut_name = nutrient['nutrient']['name']
-        nut_value = nutrient['amount']
-        nut_unit = nutrient['nutrient']['unitName']
-        # Handle energy kJ to kcal if needed
-        if nut_id == 1008 and nut_unit == 'kJ':
-            nut_value = round(nut_value / 4.184, 2)
-            nut_unit = 'kcal'
-        per_100g_nutrients.append({
-            'id': nut_id,
-            'name': nut_name,
-            'value': nut_value,
-            'unit': nut_unit
-        })
+        try:
+            nut_id = nutrient['nutrient']['id']
+            nut_name = nutrient['nutrient']['name']
+            nut_value = nutrient.get('amount', 0.0)  # Use .get() with default value
+            nut_unit = nutrient['nutrient']['unitName']
+
+            # Skip nutrients without amount values
+            if nut_value is None or nut_value == 0.0:
+                continue
+
+            # Handle energy kJ to kcal if needed
+            if nut_id == 1008 and nut_unit == 'kJ':
+                nut_value = round(nut_value / 4.184, 2)
+                nut_unit = 'kcal'
+            per_100g_nutrients.append({
+                'id': nut_id,
+                'name': nut_name,
+                'value': nut_value,
+                'unit': nut_unit
+            })
+        except (KeyError, TypeError) as e:
+            # Skip malformed nutrient data
+            continue
+
+    # Check if we have any nutrients
+    if not per_100g_nutrients:
+        raise HTTPException(status_code=404, detail="No nutrient data available for this food")
 
     scale_factor_serving = serving_size / 100.0 if serving_unit == 'g' else 1.0
     per_serving_nutrients = [
@@ -79,7 +96,17 @@ async def get_calories(request: CalorieRequest, current_user: dict = Depends(get
         for nut in per_100g_nutrients
     ]
 
-    total_servings = request.servings
+    energy_serving = next((n['value'] for n in per_serving_nutrients if n['id'] == 1008), None)
+
+    if request.mode == 'servings':
+        total_servings = request.servings
+    elif request.mode == 'grams':
+        if serving_unit == 'g':
+            total_servings = request.servings / serving_size
+        else:
+            total_servings = request.servings / 100.0
+    else:
+        total_servings = request.servings
     total_nutrients = [
         {
             'id': nut['id'],
@@ -99,5 +126,8 @@ async def get_calories(request: CalorieRequest, current_user: dict = Depends(get
         'total_servings': total_servings,
         'per_100g_nutrients': per_100g_nutrients,
         'per_serving_nutrients': per_serving_nutrients,
-        'total_nutrients': total_nutrients
+        'total_nutrients': total_nutrients,
+        'mode': request.mode,
+        'amount': request.servings,
+        'computed_total_nutrients': total_nutrients
     }
