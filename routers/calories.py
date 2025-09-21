@@ -43,6 +43,8 @@ async def get_calories(request: CalorieRequest, current_user: dict = Depends(get
         raise HTTPException(status_code=404, detail="Dish not found")
 
     best_food = select_best_food(foods, request.dish_name)
+    if best_food is None:
+        raise HTTPException(status_code=404, detail="Dish not found")
     fdc_id = best_food['fdcId']
 
     # Fetch full details
