@@ -52,15 +52,26 @@ def test_select_best_food_case_insensitive():
     best = select_best_food(foods, "apple")
     assert best["description"] == "APPLE, RAW"
 
-
 def test_select_best_food_score_threshold():
     foods = [
         {"description": "Apple pie"},
         {"description": "Green apple"},
         {"description": "Apple, raw"}
     ]
+
     # Test that it finds a match above threshold
     best = select_best_food(foods, "Apple")
     # The exact match depends on fuzzywuzzy scoring, but it should find one
     assert best is not None
     assert best["description"] in ["Apple pie", "Green apple", "Apple, raw"]
+
+def test_select_best_food_different_word_order():
+    foods = [
+        {"description": "Biryani, mutton"},
+        {"description": "Chicken biryani"},
+        {"description": "Pizza, cheese"}
+    ]
+
+    # Test matching with different word order
+    best = select_best_food(foods, "mutton biryani")
+    assert best["description"] == "Biryani, mutton"

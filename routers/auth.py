@@ -9,6 +9,7 @@ from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
 from datetime import timedelta
 from pydantic import BaseModel
 
+
 # model for JSON login
 class LoginRequest(BaseModel):
     email: str

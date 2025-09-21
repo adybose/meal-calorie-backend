@@ -24,7 +24,7 @@ async def get_calories(request: CalorieRequest, current_user: dict = Depends(get
         params = {
             "query": request.dish_name,
             "api_key": USDA_API_KEY,
-            "pageSize": 5
+            "pageSize": 20
         }
         response = requests.get(USDA_API_URL, params=params)
         if response.status_code != 200:
@@ -38,7 +38,6 @@ async def get_calories(request: CalorieRequest, current_user: dict = Depends(get
 
     data = response.json()
     foods = data.get("foods", [])
-
     if not foods:
         raise HTTPException(status_code=404, detail="Dish not found")
 
